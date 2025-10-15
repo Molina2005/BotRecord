@@ -1,0 +1,24 @@
+(ApiTelegram)
+
+1. // Estructura para poder recibir mensajes nuevos
+	u := tgbotapi.NewUpdate(0) // desde donde va a contar con la informacion, primer mensaje disponible
+	u.Timeout = 60 // tiempo para que el bot vuleva a preguntar si hay mensajes nuevos
+
+2.	// Creacion canal de actualizaciones
+    // Telegran enviara por ahi todos las actualizaciones, comandos o interaccion que lleguen al bot
+	updates := bot.GetUpdatesChan(u) 
+
+3.// Se procesa cada mensaje recibido
+	for update := range updates {
+		// mensaje que el usuario envia
+		if update.Message != nil {
+			// paso a imprimir nombre usuario y su texto a enviar al bot
+			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+			// 	El bot responde al mismo chat con Chat_ID y envia el mismo texto que recibio
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+			// Hace que el mensaje aparezca como respusta al original en telegram
+			msg.ReplyToMessageID = update.Message.MessageID
+			// Envía la respuesta del bot al chat de Telegram
+			bot.Send(msg)
+		}
+	}
