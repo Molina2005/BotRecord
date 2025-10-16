@@ -17,5 +17,6 @@ func main() {
 	defer conexion.Close()
 	fmt.Println("Conexion exitosa a PosgreSQL")
 
-	apitelegram.BotTelegram()
+	// Conexion y usabilidad bot Telegram
+	apitelegram.BotTelegram(conexion)
 }
