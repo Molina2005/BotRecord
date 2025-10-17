@@ -2,7 +2,6 @@ package apitelegram
 
 import (
 	"database/sql"
-	// "fmt"
 	"log"
 	sendmessagetelegram "modulo/SendMessageTelegram"
 	"modulo/repository"
@@ -20,8 +19,8 @@ func BotTelegram(db *sql.DB) {
 		log.Println("Error al cargar archivo .env")
 	}
 	// Cadena de conexion con variables de entorno
-	a:= os.Getenv("TELEGRAM_TOKEN")
-	
+	a := os.Getenv("TELEGRAM_TOKEN")
+
 	// creacion de instancia de bot segun token
 	bot, err := tgbotapi.NewBotAPI(a)
 	if err != nil {
@@ -30,7 +29,7 @@ func BotTelegram(db *sql.DB) {
 	// Nombre de usuario del bot
 	log.Printf("Bot autorizado como: %v", bot.Self.UserName)
 
-	// Guarda la instancia del bot para siempre trabajar con el mismo bot 
+	// Guarda la instancia del bot para siempre trabajar con el mismo bot
 	sendmessagetelegram.Init(bot)
 
 	// Estructura para poder recibir mensajes nuevos
@@ -47,15 +46,19 @@ func BotTelegram(db *sql.DB) {
 
 		// Atributos nuevo usuario y chat de telegram
 		chatID := update.Message.Chat.ID
+		idUser := update.Message.From.ID
 		username := update.Message.From.UserName
 		telefono := "0000000000"
 		canal := update.Message.Chat.Type
 		fecha := time.Now()
 
-		err := repository.QueryUser(db, chatID, username, telefono, canal, fecha)
+		err := repository.QueryUser(db, idUser, username, telefono, canal, fecha)
 		if err != nil {
 			sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
+		} else {
+			sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
 		}
-		sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
+
+		// envio recordatorios 
 	}
 }
