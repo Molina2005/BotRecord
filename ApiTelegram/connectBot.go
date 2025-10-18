@@ -59,6 +59,11 @@ func BotTelegram(db *sql.DB) {
 			sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
 		}
 
-		// envio recordatorios 
+		// title := update.Message.Text
+		// description := update.Message.Text
+		// state := "pendiente"
+
+		// envio recordatorios
+		// repository.CreateRecord(db, idUser, title,description, state,)
 	}
 }
