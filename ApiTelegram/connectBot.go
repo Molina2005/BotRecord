@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	sendmessagetelegram "modulo/SendMessageTelegram"
+	functionsarrangements "modulo/functionsArrangements"
 	"modulo/repository"
 	"os"
 	"time"
@@ -48,22 +49,36 @@ func BotTelegram(db *sql.DB) {
 		chatID := update.Message.Chat.ID
 		idUser := update.Message.From.ID
 		username := update.Message.From.UserName
-		telefono := "0000000000"
-		canal := update.Message.Chat.Type
-		fecha := time.Now()
+		phone := "0000000000"
+		channel := update.Message.Chat.Type
+		date := time.Now()
 
-		err := repository.QueryUser(db, idUser, username, telefono, canal, fecha)
+		err := repository.QueryUser(db, idUser, username, phone, channel, date)
 		if err != nil {
 			sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
 		} else {
 			sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
 		}
 
-		// title := update.Message.Text
-		// description := update.Message.Text
-		// state := "pendiente"
+		// ARREGLAR DE AQUI EN ADELANTE (FALTA LOGICA)
+
+		// Atributos nuevo recordatorio
+		title := update.Message.Text
+		state := "pendiente"
+		repeat := update.Message.Text
+		timeRecord := update.Message.Text
+		dateRecord := update.Message.Text
+		dateConv, err := functionsarrangements.FormatDate(dateRecord)
+		if err != nil {
+			log.Println("error al convertir fecha", err)
+		}
 
 		// envio recordatorios
-		// repository.CreateRecord(db, idUser, title,description, state,)
+		error := repository.CreateRecord(db, idUser, title, state, repeat, channel, timeRecord, dateConv)
+		if error != nil {
+			sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
+		} else {
+			sendmessagetelegram.MessageUser(chatID, "recordatorio registrado correctamente")
+		}
 	}
 }
