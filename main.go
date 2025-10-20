@@ -5,6 +5,7 @@ import (
 	"log"
 	apitelegram "modulo/ApiTelegram"
 	"modulo/connect"
+	"time"
 )
 
 func main() {
@@ -19,4 +20,6 @@ func main() {
 
 	// Conexion y usabilidad bot Telegram
 	apitelegram.BotTelegram(conexion)
+
+	time.Sleep(30 * time.Minute)
 }
