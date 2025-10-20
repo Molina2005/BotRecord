@@ -27,8 +27,8 @@ func QueryUser(db *sql.DB, userID int64, name string, phone string, chanel strin
 // consulta insertar recordatorios
 func CreateRecord(
 	db *sql.DB, id_user int64,
-	title, state, repeat, shipping_chanel, time_record string,
-	date_record time.Time,
+	title, state, repeat, shipping_chanel string,
+	date_record, time_record time.Time,
 ) error {
 
 	_, err := db.Exec(
