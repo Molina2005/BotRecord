@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	sendmessagetelegram "modulo/SendMessageTelegram"
+
 	functionsarrangements "modulo/functionsArrangements"
 	"modulo/repository"
 	"os"
@@ -13,6 +14,56 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 )
+
+func CreateUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
+	// Atributos nuevo usuario y chat de telegram
+	chatID := update.Message.Chat.ID
+	idUser := update.Message.From.ID
+	username := update.Message.Text
+	partsMessage := strings.SplitN(username, " ", 3)
+	dateName := partsMessage[0]
+	conv := strings.ReplaceAll(dateName, ",", "")
+	phone := "0000000000"
+	channel := update.Message.Chat.Type
+	date := time.Now()
+
+	err := repository.QueryUser(db, idUser, conv, phone, channel, date)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
+	} else {
+		sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
+	}
+	return idUser, channel
+}
+
+func CreateRecord(db *sql.DB, update *tgbotapi.Update, idUser int64, channel string) {
+	// Atributos nuevo recordatorio
+	chatID := update.Message.Chat.ID
+	text := update.Message.Text
+	parts := strings.SplitN(text, " ", 3)
+	if len(parts) < 3 {
+		sendmessagetelegram.MessageUser(chatID, "formato incorrecto.\nUsa: YYYY-MM-DD HH:MM Título")
+		return
+	}
+	dateRecord := parts[0] + " " + parts[1] // "2025-10-21 15:30"
+	title := parts[2]                       // titulo del recordatorio
+	dateConv, err := functionsarrangements.FormatDate(dateRecord)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "Formato de fecha incorrecto. Usa YYYY-MM-DD HH:MM")
+		return
+	}
+	state := "pendiente"
+	repeat := "no"
+	timeRecord := time.Now()
+
+	// envio recordatorios
+	errDB := repository.CreateRecord(db, idUser, title, state, repeat, channel, timeRecord, dateConv)
+	if errDB != nil {
+		sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
+	} else {
+		sendmessagetelegram.MessageUser(chatID, "recordatorio registrado correctamente")
+	}
+}
 
 func BotTelegram(db *sql.DB) {
 	// Datos provenientes del .env
@@ -45,49 +96,9 @@ func BotTelegram(db *sql.DB) {
 		if update.Message == nil {
 			continue
 		}
-
-		// Atributos nuevo usuario y chat de telegram
-		chatID := update.Message.Chat.ID
+		CreateUser(db, &update)
 		idUser := update.Message.From.ID
-		username := update.Message.From.UserName
-		phone := "0000000000"
 		channel := update.Message.Chat.Type
-		date := time.Now()
-
-		err := repository.QueryUser(db, idUser, username, phone, channel, date)
-		if err != nil {
-			sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
-		} else {
-			sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
-		}
-
-		// Atributos nuevo recordatorio
-		text := update.Message.Text
-		parts := strings.SplitN(text, " ", 3)
-		if len(parts) < 3 {
-			sendmessagetelegram.MessageUser(chatID, "formato incorrecto.\nUsa: YYYY-MM-DD HH:MM Título")
-			return
-		}
-
-		dateRecord := parts[0] + " " + parts[1] // "2025-10-21 15:30"
-		title := parts[2] // titulo del recordatorio
-
-		dateConv, err := functionsarrangements.FormatDate(dateRecord)
-		if err != nil {
-			sendmessagetelegram.MessageUser(chatID, "Formato de fecha incorrecto. Usa YYYY-MM-DD HH:MM")
-			return
-		}
-
-		state := "pendiente"
-		repeat := "no"
-		timeRecord := time.Now()
-
-		// envio recordatorios
-		errDB := repository.CreateRecord(db, idUser, title, state, repeat, channel, timeRecord, dateConv)
-		if errDB != nil {
-			sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
-		} else {
-			sendmessagetelegram.MessageUser(chatID, "recordatorio registrado correctamente")
-		}
+		CreateRecord(db, &update, idUser, channel)
 	}
 }
