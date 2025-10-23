@@ -4,5 +4,6 @@ import "time"
 
 func FormatDate(date string) (time.Time, error) {
 	formatDate := "2006-01-02 15:04"
-	return time.Parse(formatDate, date)
+	loc, _ := time.LoadLocation("America/Bogota")
+	return time.ParseInLocation(formatDate, date, loc)
 }
