@@ -20,6 +20,6 @@ func main() {
 
 	// Conexion y usabilidad bot Telegram
 	apitelegram.BotTelegram(conexion)
-
+	// tiempo espera
 	time.Sleep(30 * time.Minute)
 }
