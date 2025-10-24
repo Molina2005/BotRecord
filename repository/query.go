@@ -24,8 +24,14 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time) error {
 	return nil
 }
 
+// consulta eliminar usuario
+func QueryDeleteUser(db *sql.DB, userID int64) error {
+	_, err := db.Exec("DELETE FROM usuarios WHERE id_usuario = $1", userID)
+	return err
+}
+
 // consulta insertar recordatorios
-func CreateRecord(
+func QueryCreateRecord(
 	db *sql.DB, id_user int64,
 	title string, date_record time.Time,
 	state, repeat, shipping_chanel string,
