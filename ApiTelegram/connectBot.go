@@ -7,6 +7,7 @@ import (
 	functionsarrangements "modulo/functionsArrangements"
 	"modulo/repository"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func CreateUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
+func createUser(db *sql.DB, update *tgbotapi.Update, dateName string) (int64, string) {
+	// Datos automaticos y digitados por usuario
 	chatID := update.Message.Chat.ID
 	idUser := update.Message.From.ID
 	text := update.Message.Text
@@ -23,7 +25,7 @@ func CreateUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	if len(partsMessage) < 2 {
 		sendmessagetelegram.MessageUser(chatID, "Uso : /registrar NombreUsuario")
 	}
-	dateName := partsMessage[1]
+	dateName = partsMessage[1] // Nombre de usuario
 	date := time.Now()
 
 	err := repository.QueryUser(db, idUser, dateName, date)
@@ -35,8 +37,30 @@ func CreateUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	return idUser, dateName
 }
 
-func CreateRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, channel string) {
-	text := strings.TrimPrefix(update.Message.Text, "/recordatorio")
+func deleteUser(db *sql.DB, update *tgbotapi.Update, chatID int64) int64 {
+	text := update.Message.Text
+	partMessage := strings.SplitN(text, " ", 2)
+	if len(partMessage) < 2 {
+		sendmessagetelegram.MessageUser(chatID, "Uso: /eliminar IdUsuario")
+		return 0
+	}
+	dateId, err := strconv.ParseInt(partMessage[1], 10, 64)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "El ID debe ser un número válido.")
+		return 0
+	}
+
+	err = repository.QueryDeleteUser(db, dateId)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "Error al eliminar usuario de la base de datos")
+	} else {
+		sendmessagetelegram.MessageUser(chatID, "Usuario elimiando correctamente")
+	}
+	return dateId
+}
+
+func createRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, channel string) {
+	text := update.Message.Text
 	parts := strings.SplitN(text, " ", 4)
 	if len(parts) < 4 {
 		sendmessagetelegram.MessageUser(chatID, "formato incorrecto.\nUsa: YYYY-MM-DD HH:MM Título")
@@ -52,7 +76,7 @@ func CreateRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, cha
 	state := "pendiente"
 	repeat := "no"
 
-	errDB := repository.CreateRecord(db, idUser, title, dateConv, state, repeat, channel)
+	errDB := repository.QueryCreateRecord(db, idUser, title, dateConv, state, repeat, channel)
 	if errDB != nil {
 		sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
 		return
@@ -90,16 +114,18 @@ func BotTelegram(db *sql.DB) {
 		}
 		// Datos para envio de recordatorio
 		text := update.Message.Text
+		dateName := update.Message.Text
 		idUser := update.Message.From.ID
 		chatID := update.Message.Chat.ID
 		channel := update.Message.Chat.Type
 
 		switch {
 		case strings.HasPrefix(text, "/registrar"):
-			CreateUser(db, &update)
-
+			createUser(db, &update, dateName)
 		case strings.HasPrefix(text, "/recordatorio"):
-			CreateRecord(db, &update, chatID, idUser, channel)
+			createRecord(db, &update, chatID, idUser, channel)
+		case strings.HasPrefix(text, "/eliminar"):
+			deleteUser(db, &update, chatID)
 		default:
 			sendmessagetelegram.MessageUser(chatID, "comando no reconocido.\nusa /registrar\n/recordatorio")
 		}
