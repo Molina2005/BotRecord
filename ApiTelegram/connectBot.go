@@ -15,20 +15,28 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func createUser(db *sql.DB, update *tgbotapi.Update, dateName string) (int64, string) {
+func createUser(db *sql.DB, update *tgbotapi.Update, dateName, password string) (int64, string) {
 	// Datos automaticos y digitados por usuario
 	chatID := update.Message.Chat.ID
 	idUser := update.Message.From.ID
 	text := update.Message.Text
-	partsMessage := strings.SplitN(text, " ", 2)
+	partsMessage := strings.SplitN(text, " ", 3)
 
-	if len(partsMessage) < 2 {
+	if len(partsMessage) < 3 {
 		sendmessagetelegram.MessageUser(chatID, "Uso : /registrar NombreUsuario")
 	}
 	dateName = partsMessage[1] // Nombre de usuario
+	partPassword := partsMessage[2]
+
+	datePassword, err := functionsarrangements.HashPassword(partPassword)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "contraseña incorrecta")
+		return 0, ""
+	}
+
 	date := time.Now()
 
-	err := repository.QueryUser(db, idUser, dateName, date)
+	err = repository.QueryUser(db, idUser, dateName, date, datePassword)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
 	} else {
@@ -36,6 +44,21 @@ func createUser(db *sql.DB, update *tgbotapi.Update, dateName string) (int64, st
 	}
 	return idUser, dateName
 }
+
+// func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64) {
+// 	text := update.Message.Text
+// 	partMessage := strings.SplitN(text, " ", 2)
+// 	if len(partMessage) < 2 {
+// 		sendmessagetelegram.MessageUser(chatID, "Uso: /consultar contraseña")
+// 	}
+
+// 	datePassword := partMessage[1]
+
+// 	_, err := repository.CheckUserID(db, datePassword)
+// 	if err != nil {
+// 		sendmessagetelegram.MessageUser(chatID, "error al buscar ")
+// 	}
+// }
 
 func deleteUser(db *sql.DB, update *tgbotapi.Update, chatID int64) int64 {
 	text := update.Message.Text
@@ -115,15 +138,19 @@ func BotTelegram(db *sql.DB) {
 		// Datos para envio de recordatorio
 		text := update.Message.Text
 		dateName := update.Message.Text
+		datePassword := update.Message.Text
 		idUser := update.Message.From.ID
 		chatID := update.Message.Chat.ID
 		channel := update.Message.Chat.Type
 
+		// comandos para usuario
 		switch {
 		case strings.HasPrefix(text, "/registrar"):
-			createUser(db, &update, dateName)
+			createUser(db, &update, dateName, datePassword)
 		case strings.HasPrefix(text, "/recordatorio"):
 			createRecord(db, &update, chatID, idUser, channel)
+		// case strings.HasPrefix(text, "/consultar"):
+		// 	consultIdUser(db, &update, chatID)
 		case strings.HasPrefix(text, "/eliminar"):
 			deleteUser(db, &update, chatID)
 		default:
