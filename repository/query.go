@@ -2,10 +2,11 @@ package repository
 
 import (
 	"database/sql"
+	// "fmt"
 	"time"
 )
 
-func QueryUser(db *sql.DB, userID int64, name string, date time.Time) error {
+func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password string) error {
 	var existe bool
 	// verificacion de existencia de usuario
 	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM usuarios WHERE id_usuario=$1)", userID).Scan(&existe)
@@ -15,8 +16,8 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time) error {
 
 	// Si no existe se crea
 	if !existe {
-		_, err := db.Exec("INSERT INTO usuarios (id_usuario,nombre,fecha) VALUES($1,$2,$3)",
-			userID, name, date)
+		_, err := db.Exec("INSERT INTO usuarios (id_usuario,nombre,fecha,contrasena) VALUES($1,$2,$3,$4)",
+			userID, name, date, password)
 		if err != nil {
 			return err
 		}
@@ -24,9 +25,23 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time) error {
 	return nil
 }
 
+// consultar id usuario
+// func CheckUserID(db *sql.DB, userID int64) (int64, error) {
+// 	var id_user int64
+// 	err := db.QueryRow("SELECT u.id_usuario FROM usuarios u WHERE id_usuario = $1", userID).Scan(&id_user)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			fmt.Println("no se encontro usuario con ese id")
+// 			return 0, nil
+// 		}
+// 		return 0, nil
+// 	}
+// 	return id_user, nil
+// }
+
 // consulta eliminar usuario
 func QueryDeleteUser(db *sql.DB, userID int64) error {
-	_, err := db.Exec("DELETE FROM usuarios WHERE id_usuario = $1", userID)
+	_, err := db.Exec("DELETE FROM usuarios WHERE id_usuario=$1", userID)
 	return err
 }
 
