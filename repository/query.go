@@ -10,7 +10,7 @@ import (
 
 func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password string) error {
 	var existe bool
-	// verificacion de existencia de usuario
+	// Verificacion de existencia de usuario
 	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM usuarios WHERE id_usuario=$1)", userID).Scan(&existe)
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password s
 	return nil
 }
 
-// consultar id usuario
+// Consultar id usuario
 func CheckUserID(db *sql.DB, Inputpassword string) (int64, error) {
 	var id_user int64
 	var hashedPassword string
@@ -50,24 +50,23 @@ func CheckUserID(db *sql.DB, Inputpassword string) (int64, error) {
 	return id_user, nil
 }
 
-// consulta eliminar usuario
+// Consulta eliminar usuario
 func QueryDeleteUser(db *sql.DB, userID int64) error {
 	_, err := db.Exec("DELETE FROM usuarios WHERE id_usuario=$1", userID)
 	return err
 }
 
-// consulta insertar recordatorios
+// Consulta insertar recordatorios
 func QueryCreateRecord(
 	db *sql.DB, id_user int64,
 	title string, date_record time.Time,
-	state, repeat, shipping_chanel string,
+	state, shipping_chanel string,
 ) error {
 	_, err := db.Exec(
-		"INSERT INTO recordatorios (id_usuario,titulo,fecha_recordatorio,estado,repetir,canal_envio,fecha_creacion) VALUES($1,$2,$3,$4,$5,$6, NOW())",
-		id_user, title, date_record, state, repeat, shipping_chanel)
+		"INSERT INTO recordatorios (id_usuario,titulo,fecha_recordatorio,estado,canal_envio,fecha_creacion) VALUES($1,$2,$3,$4,$5, NOW())",
+		id_user, title, date_record, state, shipping_chanel)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
