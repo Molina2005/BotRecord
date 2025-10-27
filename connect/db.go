@@ -11,12 +11,12 @@ import (
 )
 
 func Connect() (*sql.DB, error) {
-	// cargue de archivo .env
+	// Cargue de archivo .env
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error al cargar archivo .env")
 	}
-	// cadena de conexion para dar uso a variables de entorno
+	// Cadena de conexion para dar uso a variables de entorno
 	cadenaConexion := fmt.Sprintf(
 		"user=%v password=%v dbname=%v host=%v port=%v sslmode=disable",
 		os.Getenv("DB_USER"),
@@ -30,7 +30,7 @@ func Connect() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	// verificacion de conexion
+	// Verificacion de conexion
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
