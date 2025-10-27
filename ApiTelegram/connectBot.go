@@ -25,21 +25,23 @@ func createUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 
 	if len(partsMessage) < 3 {
 		sendmessagetelegram.MessageUser(chatID, "Uso : /registrar NombreUsuario")
+		return 0, ""
 	}
-	dateName := partsMessage[1] // Nombre de usuario
-	password := partsMessage[2]
+	dateName := partsMessage[1] // Nombre usuario
+	password := partsMessage[2] // Contraseña
 
+	// Hasheo(encriptacion) contraseña usuario
 	datePassword, err := functionsarrangements.HashPassword(password)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "contraseña incorrecta")
 		return 0, ""
 	}
-
 	date := time.Now()
 
 	err = repository.QueryUser(db, idUser, dateName, date, datePassword)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
+		return 0, ""
 	} else {
 		sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
 	}
@@ -93,16 +95,15 @@ func createRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, cha
 		return
 	}
 	dateRecord := parts[1] + " " + parts[2] // "2025-10-21 15:30"
-	title := parts[3]                       // titulo recordatorio
+	title := parts[3]
 	dateConv, err := functionsarrangements.FormatDate(dateRecord)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "Formato de fecha incorrecto. Usa YYYY-MM-DD HH:MM")
 		return
 	}
 	state := "pendiente"
-	repeat := "no"
 
-	errDB := repository.QueryCreateRecord(db, idUser, title, dateConv, state, repeat, channel)
+	errDB := repository.QueryCreateRecord(db, idUser, title, dateConv, state, channel)
 	if errDB != nil {
 		sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
 		return
@@ -118,7 +119,7 @@ func BotTelegram(db *sql.DB) {
 		log.Println("Error al cargar archivo .env")
 	}
 	a := os.Getenv("TELEGRAM_TOKEN")
-	// creacion de instancia de bot segun token
+	// Creacion de instancia de bot segun token
 	bot, err := tgbotapi.NewBotAPI(a)
 	if err != nil {
 		log.Println("Error al crear el bot:", err)
@@ -143,8 +144,22 @@ func BotTelegram(db *sql.DB) {
 		idUser := update.Message.From.ID
 		chatID := update.Message.Chat.ID
 		channel := update.Message.Chat.Type
+		// Opciones de comandos para usuario
+		msg := `Usa alguno de los siguientes comandos:
 
-		// comandos para usuario
+		📝 /registrar <nombre_usuario> <contraseña>
+		→ Registra un nuevo usuario.
+
+		⏰ /recordatorio <fecha_hora> <descripción>
+		Ejemplo: /recordatorio 2025-10-25 14:30 Reunión con el equipo
+
+		🔍 /consultar <contraseña>
+		→ Consulta tu ID de usuario.
+
+		🗑️ /eliminar <id_usuario>
+		→ Elimina tu cuenta del sistema.`
+
+		// Comandos para usuario
 		switch {
 		case strings.HasPrefix(text, "/registrar"):
 			createUser(db, &update)
@@ -155,8 +170,7 @@ func BotTelegram(db *sql.DB) {
 		case strings.HasPrefix(text, "/eliminar"):
 			deleteUser(db, &update, chatID)
 		default:
-			sendmessagetelegram.MessageUser(chatID,
-				"comando no reconocido.\nusa /registrar\n/recordatorio\n/consultar\n/eliminar")
+			sendmessagetelegram.MessageUser(chatID, msg)
 		}
 	}
 }
