@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
-	// "fmt"
+	"fmt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password string) error {
@@ -26,18 +28,27 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password s
 }
 
 // consultar id usuario
-// func CheckUserID(db *sql.DB, userID int64) (int64, error) {
-// 	var id_user int64
-// 	err := db.QueryRow("SELECT u.id_usuario FROM usuarios u WHERE id_usuario = $1", userID).Scan(&id_user)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			fmt.Println("no se encontro usuario con ese id")
-// 			return 0, nil
-// 		}
-// 		return 0, nil
-// 	}
-// 	return id_user, nil
-// }
+func CheckUserID(db *sql.DB, Inputpassword string) (int64, error) {
+	var id_user int64
+	var hashedPassword string
+	err := db.QueryRow("SELECT id_usuario, contrasena FROM usuarios").Scan(&id_user, &hashedPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("no se encontro usuario con ese id")
+			return 0, nil
+		}
+		return 0, nil
+	}
+
+	// Comparacion contraseña en base datos y digitada por usuario en Telegram
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(Inputpassword))
+	if err != nil {
+		fmt.Println("Contraseña incorrecta")
+		return 0, nil
+	}
+
+	return id_user, nil
+}
 
 // consulta eliminar usuario
 func QueryDeleteUser(db *sql.DB, userID int64) error {
