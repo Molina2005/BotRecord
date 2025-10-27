@@ -2,6 +2,7 @@ package apitelegram
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	sendmessagetelegram "modulo/SendMessageTelegram"
 	functionsarrangements "modulo/functionsArrangements"
@@ -15,7 +16,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func createUser(db *sql.DB, update *tgbotapi.Update, dateName, password string) (int64, string) {
+func createUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	// Datos automaticos y digitados por usuario
 	chatID := update.Message.Chat.ID
 	idUser := update.Message.From.ID
@@ -25,10 +26,10 @@ func createUser(db *sql.DB, update *tgbotapi.Update, dateName, password string) 
 	if len(partsMessage) < 3 {
 		sendmessagetelegram.MessageUser(chatID, "Uso : /registrar NombreUsuario")
 	}
-	dateName = partsMessage[1] // Nombre de usuario
-	partPassword := partsMessage[2]
+	dateName := partsMessage[1] // Nombre de usuario
+	password := partsMessage[2]
 
-	datePassword, err := functionsarrangements.HashPassword(partPassword)
+	datePassword, err := functionsarrangements.HashPassword(password)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "contraseña incorrecta")
 		return 0, ""
@@ -45,20 +46,22 @@ func createUser(db *sql.DB, update *tgbotapi.Update, dateName, password string) 
 	return idUser, dateName
 }
 
-// func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64) {
-// 	text := update.Message.Text
-// 	partMessage := strings.SplitN(text, " ", 2)
-// 	if len(partMessage) < 2 {
-// 		sendmessagetelegram.MessageUser(chatID, "Uso: /consultar contraseña")
-// 	}
+func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64, idUser int64) (int64, error) {
+	text := update.Message.Text
+	partMessage := strings.SplitN(text, " ", 2)
+	if len(partMessage) < 2 {
+		sendmessagetelegram.MessageUser(chatID, "Uso: /consultar contraseña")
+	}
+	datePassword := partMessage[1] // Contraseña
 
-// 	datePassword := partMessage[1]
-
-// 	_, err := repository.CheckUserID(db, datePassword)
-// 	if err != nil {
-// 		sendmessagetelegram.MessageUser(chatID, "error al buscar ")
-// 	}
-// }
+	_, err := repository.CheckUserID(db, datePassword)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, "error al buscar id principal")
+	} else {
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("id usuario: %v", idUser))
+	}
+	return idUser, nil
+}
 
 func deleteUser(db *sql.DB, update *tgbotapi.Update, chatID int64) int64 {
 	text := update.Message.Text
@@ -137,8 +140,6 @@ func BotTelegram(db *sql.DB) {
 		}
 		// Datos para envio de recordatorio
 		text := update.Message.Text
-		dateName := update.Message.Text
-		datePassword := update.Message.Text
 		idUser := update.Message.From.ID
 		chatID := update.Message.Chat.ID
 		channel := update.Message.Chat.Type
@@ -146,15 +147,16 @@ func BotTelegram(db *sql.DB) {
 		// comandos para usuario
 		switch {
 		case strings.HasPrefix(text, "/registrar"):
-			createUser(db, &update, dateName, datePassword)
+			createUser(db, &update)
 		case strings.HasPrefix(text, "/recordatorio"):
 			createRecord(db, &update, chatID, idUser, channel)
-		// case strings.HasPrefix(text, "/consultar"):
-		// 	consultIdUser(db, &update, chatID)
+		case strings.HasPrefix(text, "/consultar"):
+			consultIdUser(db, &update, chatID, idUser)
 		case strings.HasPrefix(text, "/eliminar"):
 			deleteUser(db, &update, chatID)
 		default:
-			sendmessagetelegram.MessageUser(chatID, "comando no reconocido.\nusa /registrar\n/recordatorio")
+			sendmessagetelegram.MessageUser(chatID,
+				"comando no reconocido.\nusa /registrar\n/recordatorio\n/consultar\n/eliminar")
 		}
 	}
 }
