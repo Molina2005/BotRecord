@@ -48,17 +48,19 @@ func createUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	return idUser, dateName
 }
 
-func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64, idUser int64) (int64, error) {
+func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64) (int64, error) {
 	text := update.Message.Text
 	partMessage := strings.SplitN(text, " ", 2)
 	if len(partMessage) < 2 {
 		sendmessagetelegram.MessageUser(chatID, "Uso: /consultar contraseña")
+		return 0, nil
 	}
 	datePassword := partMessage[1] // Contraseña
 
-	_, err := repository.CheckUserID(db, datePassword)
+	idUser, err := repository.CheckUserID(db, datePassword, chatID)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "error al buscar id principal")
+		sendmessagetelegram.MessageUser(chatID, err.Error())
+		return 0, err
 	} else {
 		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("id usuario: %v", idUser))
 	}
@@ -81,6 +83,7 @@ func deleteUser(db *sql.DB, update *tgbotapi.Update, chatID int64) int64 {
 	err = repository.QueryDeleteUser(db, dateId)
 	if err != nil {
 		sendmessagetelegram.MessageUser(chatID, "Error al eliminar usuario de la base de datos")
+		return 0
 	} else {
 		sendmessagetelegram.MessageUser(chatID, "Usuario elimiando correctamente")
 	}
@@ -111,6 +114,10 @@ func createRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, cha
 		sendmessagetelegram.MessageUser(chatID, "recordatorio registrado correctamente")
 	}
 }
+
+// func sendReminder() {
+
+// }
 
 func BotTelegram(db *sql.DB) {
 	// Datos provenientes del .env
@@ -147,16 +154,18 @@ func BotTelegram(db *sql.DB) {
 		// Opciones de comandos para usuario
 		msg := `Usa alguno de los siguientes comandos:
 
-		📝 /registrar <nombre_usuario> <contraseña>
+		❗Recomendacion: hacer uso de espacios entre apartados
+
+		📝 /registrar nombre_usuario contraseña
 		→ Registra un nuevo usuario.
 
-		⏰ /recordatorio <fecha_hora> <descripción>
+		⏰ /recordatorio fecha_hora descripción
 		Ejemplo: /recordatorio 2025-10-25 14:30 Reunión con el equipo
 
-		🔍 /consultar <contraseña>
+		🔍 /consultar contraseña
 		→ Consulta tu ID de usuario.
 
-		🗑️ /eliminar <id_usuario>
+		🗑️ /eliminar id_usuario
 		→ Elimina tu cuenta del sistema.`
 
 		// Comandos para usuario
@@ -166,7 +175,7 @@ func BotTelegram(db *sql.DB) {
 		case strings.HasPrefix(text, "/recordatorio"):
 			createRecord(db, &update, chatID, idUser, channel)
 		case strings.HasPrefix(text, "/consultar"):
-			consultIdUser(db, &update, chatID, idUser)
+			consultIdUser(db, &update, chatID)
 		case strings.HasPrefix(text, "/eliminar"):
 			deleteUser(db, &update, chatID)
 		default:
