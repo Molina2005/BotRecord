@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	sendmessagetelegram "modulo/SendMessageTelegram"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -28,13 +28,13 @@ func QueryUser(db *sql.DB, userID int64, name string, date time.Time, password s
 }
 
 // Consultar id usuario
-func CheckUserID(db *sql.DB, Inputpassword string) (int64, error) {
-	var id_user int64
+func CheckUserID(db *sql.DB, Inputpassword string, ChatID int64) (int64, error) {
 	var hashedPassword string
-	err := db.QueryRow("SELECT id_usuario, contrasena FROM usuarios").Scan(&id_user, &hashedPassword)
+	// Se valida que sea el id del usuario que digito el comando
+	err := db.QueryRow("SELECT id_usuario, contrasena FROM usuarios WHERE id_usuario = $1", ChatID).Scan(&ChatID, &hashedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("no se encontro usuario con ese id")
+			sendmessagetelegram.MessageUser(ChatID, "Usuario no encontrado. Regístrate primero con /registrar.")
 			return 0, nil
 		}
 		return 0, nil
@@ -43,11 +43,10 @@ func CheckUserID(db *sql.DB, Inputpassword string) (int64, error) {
 	// Comparacion contraseña en base datos y digitada por usuario en Telegram
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(Inputpassword))
 	if err != nil {
-		fmt.Println("Contraseña incorrecta")
+		sendmessagetelegram.MessageUser(ChatID, "Contraseña incorrecta")
 		return 0, nil
 	}
-
-	return id_user, nil
+	return ChatID, nil
 }
 
 // Consulta eliminar usuario
@@ -70,3 +69,13 @@ func QueryCreateRecord(
 	}
 	return nil
 }
+
+// Consulta envio recordatorio
+// func ConsultShippingReminder(db *sql.DB, ChatID int64, title string, date_record time.Time) (int64, error) {
+
+// 	rows, err := db.Query("SELECT id_usuario, titulo, fecha_recordatorio FROM recordatorios WHERE id_usuario = $1", ChatID)
+// 	if err != nil {
+// 		return 0, nil
+// 	}
+// 	return ChatID, nil
+// }
