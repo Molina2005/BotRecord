@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 	sendmessagetelegram "modulo/SendMessageTelegram"
+
+	"modulo/models"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -71,11 +73,21 @@ func QueryCreateRecord(
 }
 
 // Consulta envio recordatorio
-// func ConsultShippingReminder(db *sql.DB, ChatID int64, title string, date_record time.Time) (int64, error) {
+func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, error) {
+	var recordatorios []models.Recordatorio
+	rows, err := db.Query("SELECT id_usuario, titulo, fecha_recordatorio AT TIME ZONE 'America/Bogota' AS fecha_recordatorio FROM recordatorios WHERE id_usuario = $1", ChatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-// 	rows, err := db.Query("SELECT id_usuario, titulo, fecha_recordatorio FROM recordatorios WHERE id_usuario = $1", ChatID)
-// 	if err != nil {
-// 		return 0, nil
-// 	}
-// 	return ChatID, nil
-// }
+	for rows.Next() {
+		var r models.Recordatorio
+		err := rows.Scan(&r.Id, &r.Title, &r.DateRecord)
+		if err != nil {
+			return nil, err
+		}
+		recordatorios = append(recordatorios, r)
+	}
+	return recordatorios, nil
+}
