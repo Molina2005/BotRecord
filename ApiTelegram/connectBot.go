@@ -115,30 +115,30 @@ func createRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, cha
 	}
 }
 
-func sendReminder(db *sql.DB, chatID int64) {
-	for {
-		loc, _ := time.LoadLocation("America/Bogota")
-		currentDate := time.Now().In(loc).Truncate(time.Minute) // sin segundos
+// func sendReminder(db *sql.DB, chatID int64) {
+// 	for {
+// 		loc, _ := time.LoadLocation("America/Bogota")
+// 		currentDate := time.Now().In(loc).Truncate(time.Minute) // sin segundos
 
-		reminders, err := repository.ConsultShippingReminder(db, chatID)
-		if err != nil {
-			fmt.Println("Error al consultar recordatorio", err)
-			return
-		}
+// 		reminders, err := repository.ConsultShippingReminder(db, chatID)
+// 		if err != nil {
+// 			fmt.Println("Error al consultar recordatorio", err)
+// 			return
+// 		}
 
-		for _, r := range reminders {
-			recordDate := r.DateRecord.Truncate(time.Minute)
+// 		for _, r := range reminders {
+// 			recordDate := r.DateRecord.Truncate(time.Minute)
 
-			fmt.Println("Recordatorio:", recordDate.Format("2006-01-02 15:04:05 -0700"))
-			fmt.Println("Ahora:", currentDate.Format("2006-01-02 15:04:05 -0700"))
+// 			fmt.Println("Recordatorio:", recordDate.Format("2006-01-02 15:04:05 -0700"))
+// 			fmt.Println("Ahora:", currentDate.Format("2006-01-02 15:04:05 -0700"))
 
-			if recordDate.Equal(currentDate) {
-				formatDate := r.DateRecord.Format("2006-01-02 15:04")
-				sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v %v", r.Title, formatDate))
-			}
-		}
-	}
-}
+// 			if recordDate.Equal(currentDate) {
+// 				formatDate := r.DateRecord.Format("2006-01-02 15:04")
+// 				sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v %v", r.Title, formatDate))
+// 			}
+// 		}
+// 	}
+// }
 
 func BotTelegram(db *sql.DB) {
 	// Datos provenientes del .env
