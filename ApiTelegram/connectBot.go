@@ -24,7 +24,7 @@ func createUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	partsMessage := strings.SplitN(text, " ", 3)
 
 	if len(partsMessage) < 3 {
-		sendmessagetelegram.MessageUser(chatID, "Uso : /registrar NombreUsuario")
+		sendmessagetelegram.MessageUser(chatID, "❗Uso : /registrar NombreUsuario")
 		return 0, ""
 	}
 	dateName := partsMessage[1] // Nombre usuario
@@ -33,17 +33,17 @@ func createUser(db *sql.DB, update *tgbotapi.Update) (int64, string) {
 	// Hasheo(encriptacion) contraseña usuario
 	datePassword, err := functionsarrangements.HashPassword(password)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "contraseña incorrecta")
+		sendmessagetelegram.MessageUser(chatID, "⚠️ contraseña incorrecta")
 		return 0, ""
 	}
 	date := time.Now()
 
 	err = repository.QueryUser(db, idUser, dateName, date, datePassword)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "error registrando usuario en la base de datos")
+		sendmessagetelegram.MessageUser(chatID, "❌ error registrando usuario en la base de datos")
 		return 0, ""
 	} else {
-		sendmessagetelegram.MessageUser(chatID, "usuario registrado correctamente")
+		sendmessagetelegram.MessageUser(chatID, "✅ usuario registrado correctamente")
 	}
 	return idUser, dateName
 }
@@ -52,7 +52,7 @@ func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64) (int64, er
 	text := update.Message.Text
 	partMessage := strings.SplitN(text, " ", 2)
 	if len(partMessage) < 2 {
-		sendmessagetelegram.MessageUser(chatID, "Uso: /consultar contraseña")
+		sendmessagetelegram.MessageUser(chatID, "❗Uso: /consultar contraseña")
 		return 0, nil
 	}
 	datePassword := partMessage[1] // Contraseña
@@ -62,7 +62,7 @@ func consultIdUser(db *sql.DB, update *tgbotapi.Update, chatID int64) (int64, er
 		sendmessagetelegram.MessageUser(chatID, err.Error())
 		return 0, err
 	} else {
-		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("id usuario: %v", idUser))
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("🆔 Codigo unico: %v", idUser))
 	}
 	return idUser, nil
 }
@@ -71,21 +71,21 @@ func deleteUser(db *sql.DB, update *tgbotapi.Update, chatID int64) int64 {
 	text := update.Message.Text
 	partMessage := strings.SplitN(text, " ", 2)
 	if len(partMessage) < 2 {
-		sendmessagetelegram.MessageUser(chatID, "Uso: /eliminar IdUsuario")
+		sendmessagetelegram.MessageUser(chatID, "❗Uso: /eliminar IdUsuario")
 		return 0
 	}
 	dateId, err := strconv.ParseInt(partMessage[1], 10, 64)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "El ID debe ser un número válido.")
+		sendmessagetelegram.MessageUser(chatID, "⚠️ El ID debe ser un número válido.")
 		return 0
 	}
 
 	err = repository.QueryDeleteUser(db, dateId)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "Error al eliminar usuario de la base de datos")
+		sendmessagetelegram.MessageUser(chatID, "❌ Error al eliminar usuario de la base de datos")
 		return 0
 	} else {
-		sendmessagetelegram.MessageUser(chatID, "Usuario elimiando correctamente")
+		sendmessagetelegram.MessageUser(chatID, "🗑️ Usuario elimiando correctamente")
 	}
 	return dateId
 }
@@ -101,44 +101,41 @@ func createRecord(db *sql.DB, update *tgbotapi.Update, chatID, idUser int64, cha
 	title := parts[3]
 	dateConv, err := functionsarrangements.FormatDate(dateRecord)
 	if err != nil {
-		sendmessagetelegram.MessageUser(chatID, "Formato de fecha incorrecto. Usa YYYY-MM-DD HH:MM")
+		sendmessagetelegram.MessageUser(chatID, "❗Formato de fecha incorrecto. Usa YYYY-MM-DD HH:MM")
 		return
 	}
 	state := "pendiente"
 
 	errDB := repository.QueryCreateRecord(db, idUser, title, dateConv, state, channel)
 	if errDB != nil {
-		sendmessagetelegram.MessageUser(chatID, "error registrando recordatorio en la base de datos")
+		sendmessagetelegram.MessageUser(chatID, "❌ error registrando recordatorio en la base de datos")
 		return
 	} else {
-		sendmessagetelegram.MessageUser(chatID, "recordatorio registrado correctamente")
+		sendmessagetelegram.MessageUser(chatID, "✅ recordatorio registrado correctamente")
 	}
 }
 
-// func sendReminder(db *sql.DB, chatID int64) {
-// 	for {
-// 		loc, _ := time.LoadLocation("America/Bogota")
-// 		currentDate := time.Now().In(loc).Truncate(time.Minute) // sin segundos
+func sendReminder(db *sql.DB, chatID int64) {
+	for {
+		reminders, err := repository.ConsultShippingReminder(db, chatID)
+		if err != nil {
+			fmt.Println("Error al consultar recordatorio", err)
+			return
+		}
+		loc, _ := time.LoadLocation("America/Bogota")
+		currentDate := time.Now().In(loc).Truncate(time.Minute) // sin segundos
 
-// 		reminders, err := repository.ConsultShippingReminder(db, chatID)
-// 		if err != nil {
-// 			fmt.Println("Error al consultar recordatorio", err)
-// 			return
-// 		}
-
-// 		for _, r := range reminders {
-// 			recordDate := r.DateRecord.Truncate(time.Minute)
-
-// 			fmt.Println("Recordatorio:", recordDate.Format("2006-01-02 15:04:05 -0700"))
-// 			fmt.Println("Ahora:", currentDate.Format("2006-01-02 15:04:05 -0700"))
-
-// 			if recordDate.Equal(currentDate) {
-// 				formatDate := r.DateRecord.Format("2006-01-02 15:04")
-// 				sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v %v", r.Title, formatDate))
-// 			}
-// 		}
-// 	}
-// }
+		for _, r := range reminders {
+			recordDate := r.DateRecord.Truncate(time.Minute)
+			if recordDate.Equal(currentDate) {
+				formatDate := r.DateRecord.Format("15:04")
+				sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("🔔 %v %v", r.Title, formatDate))
+			}
+		}
+		// lapso de 1min para que vuelva repetir el proceso
+		time.Sleep(time.Minute)
+	}
+}
 
 func BotTelegram(db *sql.DB) {
 	// Datos provenientes del .env
@@ -172,6 +169,7 @@ func BotTelegram(db *sql.DB) {
 		idUser := update.Message.From.ID
 		chatID := update.Message.Chat.ID
 		channel := update.Message.Chat.Type
+
 		// Opciones de comandos para usuario
 		msg := `Usa alguno de los siguientes comandos:
 
@@ -202,6 +200,7 @@ func BotTelegram(db *sql.DB) {
 		default:
 			sendmessagetelegram.MessageUser(chatID, msg)
 		}
-		// sendReminder(db, chatID)
+		// Envio recordatorios al usurio en fecha especifica
+		go sendReminder(db, chatID)
 	}
 }
