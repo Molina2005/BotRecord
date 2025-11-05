@@ -3,7 +3,9 @@ package models
 import "time"
 
 type Recordatorio struct {
-	Id         int
-	Title      string
-	DateRecord time.Time
+	IdRecordatorios int64
+	Id              int64
+	Title           string
+	DateRecord      time.Time
+	Estado          string
 }
