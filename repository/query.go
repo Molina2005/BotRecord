@@ -75,7 +75,7 @@ func QueryCreateRecord(
 // Consulta envio recordatorio
 func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, error) {
 	var recordatorios []models.Recordatorio
-	rows, err := db.Query("SELECT id_usuario, titulo, fecha_recordatorio AT TIME ZONE 'America/Bogota' AS fecha_recordatorio FROM recordatorios WHERE id_usuario = $1", ChatID)
+	rows, err := db.Query("SELECT id_recordatorio, id_usuario, titulo, fecha_recordatorio AT TIME ZONE 'America/Bogota' AS fecha_recordatorio, estado FROM recordatorios WHERE id_usuario = $1", ChatID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, e
 
 	for rows.Next() {
 		var r models.Recordatorio
-		err := rows.Scan(&r.Id, &r.Title, &r.DateRecord)
+		err := rows.Scan(&r.IdRecordatorios, &r.Id, &r.Title, &r.DateRecord, &r.Estado)
 		if err != nil {
 			return nil, err
 		}
@@ -91,3 +91,9 @@ func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, e
 	}
 	return recordatorios, nil
 }
+
+// Consulta eliminacion recordatorios
+// func DeleteReminder(db *sql.DB) {
+
+// 	db.Exec("DELETE FROM recordatorios WHERE id_recordatorio = &1 AND id_user = $2")
+// }
