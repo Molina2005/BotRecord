@@ -133,7 +133,24 @@ func sendReminder(db *sql.DB, chatID int64) {
 			}
 		}
 		// lapso de 1min para que vuelva repetir el proceso
-		time.Sleep(time.Minute)
+		time.Sleep(1 * time.Minute)
+	}
+}
+
+func consultReminder(db *sql.DB, update *tgbotapi.Update, ChatID int64) {
+	text := update.Message.Text
+	parts := strings.Split(text, " ")
+	if len(parts) < 1 {
+		sendmessagetelegram.MessageUser(ChatID, "❗Uso: /Lista")
+	}
+	reminders, err := repository.ConsultShippingReminder(db, ChatID)
+	if err != nil {
+		return
+	}
+
+	for _, r := range reminders {
+		recordDate := r.DateRecord.Format("2006-01-02 15:04")
+		sendmessagetelegram.MessageUser(ChatID, fmt.Sprintf("⏰ [%v] %v %v %v ", r.IdRecordatorios, r.Title, recordDate, r.Estado))
 	}
 }
 
@@ -179,7 +196,10 @@ func BotTelegram(db *sql.DB) {
 		→ Registra un nuevo usuario.
 
 		⏰ /recordatorio fecha_hora descripción
-		Ejemplo: /recordatorio 2025-10-25 14:30 Reunión con el equipo
+		Ejemplo: /recordatorio 2025-10-25 14:30 Reunión 
+
+		🗓️ /lista 
+		→ Lista de recordatorios
 
 		🔍 /consultar contraseña
 		→ Consulta tu ID de usuario.
@@ -197,6 +217,8 @@ func BotTelegram(db *sql.DB) {
 			consultIdUser(db, &update, chatID)
 		case strings.HasPrefix(text, "/eliminar"):
 			deleteUser(db, &update, chatID)
+		case strings.HasPrefix(text, "/lista"):
+			consultReminder(db, &update, chatID)
 		default:
 			sendmessagetelegram.MessageUser(chatID, msg)
 		}
