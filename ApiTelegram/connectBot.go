@@ -155,6 +155,25 @@ func consultReminder(db *sql.DB, update *tgbotapi.Update, ChatID int64) {
 	}
 }
 
+func deleteReminders(db *sql.DB, update *tgbotapi.Update, chatID int64) {
+	text := update.Message.Text
+	parts := strings.SplitN(text, " ", 2)
+	if len(parts) < 2 {
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v Uso: /eliminarrecordatorio codigorecordatorio", bot.EmojiAtencion))
+	}
+	partId := parts[1]
+	Id, _ := strconv.Atoi(partId)
+
+	rows, err := repository.DeleteReminder(db, Id, chatID)
+	if err != nil {
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v Error al eliminar recordatorio", bot.EmojiError))
+	} else if rows == 0 {
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v No se encontró ningún recordatorio con ese ID", bot.EmojiAdvertencia))
+	} else {
+		sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v Recordatorio eliminado correctamente", bot.EmojiExito))
+	}
+}
+
 func BotTelegram(db *sql.DB) {
 	// Datos provenientes del .env
 	err := godotenv.Load()
@@ -192,24 +211,32 @@ func BotTelegram(db *sql.DB) {
 		msg := `Usa alguno de los siguientes comandos:
 
 		❗Recomendacion: hacer uso de espacios entre apartados
+		
+		📋 /menu 
+		→ Desplegar menu de comandos
 
-		📝 /registrar nombre_usuario contraseña
+		📝 /registrar nombreusuario contraseña
 		→ Registra un nuevo usuario.
 
-		⏰ /recordatorio fecha_hora descripción
+		⏰ /recordatorio fechayhora descripción
 		Ejemplo: /recordatorio 2025-10-25 14:30 Reunión 
 
-		🗓️ /lista 
-		→ Lista de recordatorios
+		❌ /borrarrecordatorio id
+		→ Borrar recordatorio de la lista
 
 		🔍 /consultar contraseña
 		→ Consulta tu ID de usuario.
 
-		🗑️ /eliminar id_usuario
-		→ Elimina tu cuenta del sistema.`
+		🗑️ /eliminar id	usuario
+		→ Elimina tu cuenta del sistema.
+
+		🗓️ /lista 
+		→ Lista de recordatorios`
 
 		// Comandos para usuario
 		switch {
+		case strings.HasPrefix(text, "/menu"):
+			sendmessagetelegram.MessageUser(chatID, msg)
 		case strings.HasPrefix(text, "/registrar"):
 			createUser(db, &update)
 		case strings.HasPrefix(text, "/recordatorio"):
@@ -220,6 +247,8 @@ func BotTelegram(db *sql.DB) {
 			deleteUser(db, &update, chatID)
 		case strings.HasPrefix(text, "/lista"):
 			consultReminder(db, &update, chatID)
+		case strings.HasPrefix(text, "/borrarrecordatorio"):
+			deleteReminders(db, &update, chatID)
 		default:
 			sendmessagetelegram.MessageUser(chatID, msg)
 		}
