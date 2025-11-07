@@ -93,7 +93,14 @@ func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, e
 }
 
 // Consulta eliminacion recordatorios
-// func DeleteReminder(db *sql.DB) {
-
-// 	db.Exec("DELETE FROM recordatorios WHERE id_recordatorio = &1 AND id_user = $2")
-// }
+func DeleteReminder(db *sql.DB, id_recordatorio int, ChatID int64) (int64, error) {
+	result, err := db.Exec("DELETE FROM recordatorios WHERE id_recordatorio = $1 AND id_usuario = $2", id_recordatorio, ChatID)
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return rowsAffected, err
+}
