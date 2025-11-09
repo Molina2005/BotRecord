@@ -75,7 +75,7 @@ func QueryCreateRecord(
 // Consulta envio recordatorio
 func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, error) {
 	var recordatorios []models.Recordatorio
-	rows, err := db.Query("SELECT id_recordatorio, id_usuario, titulo, fecha_recordatorio AT TIME ZONE 'America/Bogota' AS fecha_recordatorio, estado FROM recordatorios WHERE id_usuario = $1", ChatID)
+	rows, err := db.Query("SELECT id_recordatorio,titulo, fecha_recordatorio AT TIME ZONE 'America/Bogota' AS fecha_recordatorio, estado FROM recordatorios WHERE id_usuario = $1", ChatID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func ConsultShippingReminder(db *sql.DB, ChatID int64) ([]models.Recordatorio, e
 
 	for rows.Next() {
 		var r models.Recordatorio
-		err := rows.Scan(&r.IdRecordatorios, &r.Id, &r.Title, &r.DateRecord, &r.Estado)
+		err := rows.Scan(&r.IdRecordatorios, &r.Title, &r.DateRecord, &r.Estado)
 		if err != nil {
 			return nil, err
 		}
