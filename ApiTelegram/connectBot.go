@@ -131,6 +131,10 @@ func sendReminder(db *sql.DB, chatID int64) {
 			if recordDate.Equal(currentDate) {
 				formatDate := r.DateRecord.Format("15:04")
 				sendmessagetelegram.MessageUser(chatID, fmt.Sprintf("%v %v %v", bot.EmojiNotificacion, r.Title, formatDate))
+				_, err := db.Exec("UPDATE recordatorios SET estado = 'enviado' WHERE id_usuario = $1 AND id_recordatorio = $2", int64(chatID), int64(r.IdRecordatorios))
+				if err != nil {
+					log.Println("Error actualizando el estado del recordatorio", err)
+				}
 			}
 		}
 		// lapso de 1min para que vuelva repetir el proceso
