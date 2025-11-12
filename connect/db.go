@@ -19,9 +19,9 @@ func Connect() (*sql.DB, error) {
 	// Cadena de conexion para dar uso a variables de entorno
 	cadenaConexion := fmt.Sprintf(
 		"user=%v password=%v dbname=%v host=%v port=%v sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
 	)
