@@ -257,6 +257,10 @@ func BotTelegram(db *sql.DB) {
 			sendmessagetelegram.MessageUser(chatID, msg)
 		}
 		// Envio recordatorios al usurio en fecha especifica
+		//
+		//
+		//
+		//
 		go sendReminder(db, chatID)
 	}
 }
